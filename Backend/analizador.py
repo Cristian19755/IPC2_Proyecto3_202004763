@@ -1,6 +1,7 @@
 from xml.dom import minidom
+from xml.etree import ElementTree as ET
 import re
-
+import os 
 def obtenerSentimientosPositivos(archivo):
     x = []
     archivo = archivo.getElementsByTagName('sentimientos_positivos')
@@ -172,8 +173,10 @@ def FobtenerFecha(mensaje):
     x = re.findall('[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]', mensaje, flags=re.IGNORECASE)
     return x[0]
 
-def FcantidadMensajesTotal(mensajes:list):
-    num = len(mensajes)
+def FcantidadMensajesTotal(mensajes:list, empresa:str):
+    
+    if empresa == 0:
+        num = len(mensajes)
     return num
 
 def clasifMensajeSent(mensaje:str, positivos:list, negativos:list):
@@ -209,15 +212,48 @@ def clasifMensajeServ(mensaje:str, empresa:str, servicio:str):
     else:
         return False
 
-def salida():
-    x = ''''''
+def baseDeDatos(mensajes: list, sentimientosPositivos: list, sentimientosNegativos:list,empresas:list, servicios:list):
+    f = open('DataBase.xml','w')
+    archivo = ET.Element('solicitud_clasificacion')
+    diccrionario = ET.SubElement(archivo,'diccionario')
+    positif = ET.SubElement(diccrionario,'sentimientos_positivos')
+    
+    for i in sentimientosPositivos:
+        palabras = ET.SubElement(positif,'palabra')
+        palabras.text=i
 
-'''
-archive = minidom.parse('db.xml')
-y = obtenerSentimientosPositivos(archive)
-z = obtenerSentimientosNegativos(archive)
-x = obtenerMensajes(archive)
+    negatif = ET.SubElement(diccrionario,'sentimientos_negativos')
+    
+    for i in sentimientosNegativos:
+        palabras = ET.SubElement(negatif,'palabra')
+        palabras.text=i
+    
+    empresasA = ET.SubElement(diccrionario, 'empresas_analizar')
+    empresa = ET.SubElement(empresasA, 'empresa')
+    for i in empresas:
+        nombre = ET.SubElement(empresa,'nombre')
+        nombre.text = i
+        for j in servicios[0]:
+            servicio = ET.SubElement(empresa,'servicio')
+            servicio.set('nombre', j)
+            for k in servicios[1]:
+                alias = ET.SubElement(servicio,'alias')
+                alias.text = k
 
-for i in x:
-    print(clasifMensajeSent(i,y,z))
-print(numMenServ(x,'USAC'))'''
+
+
+    mydata = str(ET.tostring(archivo))
+    f.write(mydata)
+
+def reset():
+    os.remove('DataBase.xml')
+
+archivo = minidom.parse('db.xml')
+a = obtenerMensajes(archivo)
+b = obtenerSentimientosPositivos(archivo)
+c = obtenerSentimientosNegativos(archivo)
+d = obtenerEmpresas(archivo)
+e = obtenerServicios(archivo)
+baseDeDatos(a,b,c,d,e)
+db = minidom.parse('db.xml')
+print(obtenerSentimientosPositivos(db))

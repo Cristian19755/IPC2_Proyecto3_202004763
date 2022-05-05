@@ -213,6 +213,13 @@ def clasifMensajeServ(mensaje:str, empresa:str, servicio:str):
         return True
     else:
         return False
+
+def empresaMensaje(mensaje:str, empresa:str):
+    x = re.findall(empresa, mensaje,flags=re.IGNORECASE)
+    if len(x) != 0:
+        return True
+    else:
+        return False
 ###########################################
 ###########################################
 ###########################################
@@ -224,14 +231,24 @@ CORS(app)
 @app.route('/ConsultarFecha', methods=['POST'])
 def consultarFecha():
     y = []
-    data = request.json[0]
+    z = []
+    data = request.json
     ruta = data['Ruta']
     archivo = minidom.parse(ruta)
     x = obtenerMensajes(archivo)
-    for i in x:
-        if data['Fecha'] == FobtenerFecha(i):
-            y.append(i)
-    return jsonify(y)
+    empresa = data['Empresa']
+    if empresa !=  'All':
+        for i in x:
+            if data['Fecha'] == FobtenerFecha(i) and empresaMensaje(i,data['Empresa']):
+                y.append(i)
+        return jsonify(y)
+    else:
+        y = obtenerEmpresas(archivo)
+        for i in x:
+            for j in y:
+                if data['Fecha'] == FobtenerFecha(i) and empresaMensaje(i,j):
+                    z.append(i)
+        return jsonify(z)
 
 
 if __name__ == '__main__':
