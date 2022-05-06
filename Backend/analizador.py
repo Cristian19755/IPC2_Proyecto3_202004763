@@ -156,7 +156,8 @@ def obtenerMensajes(archivo):
 
 def FobtenerFecha(mensaje):
     x = re.findall('[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]', mensaje, flags=re.IGNORECASE)
-    return x[0]
+    if x != []:
+        return x[0]
 
 def FcantidadMensajesTotal(mensajes:list, empresa:str):
     
@@ -285,11 +286,3 @@ def reset():
     f.write('')
 
 
-archivo = minidom.parse('db.xml')
-a = obtenerMensajes(archivo)
-b = obtenerSentimientosPositivos(archivo)
-c = obtenerSentimientosNegativos(archivo)
-d = obtenerEmpresas(archivo)
-e = obtenerServicios(archivo)
-for i in a:
-    print(response1(i))
