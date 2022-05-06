@@ -1,7 +1,7 @@
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
 import re
-import os 
+
 def obtenerSentimientosPositivos(archivo):
     x = []
     archivo = archivo.getElementsByTagName('sentimientos_positivos')
@@ -108,23 +108,26 @@ def obtenerServicios(archivo):
 
     for elem in archivo:
         x = []
-        palabras = elem.getElementsByTagName('alias')
+        palabras = elem.getElementsByTagName('servicio')
         for palabra in palabras:
-            y = palabra.firstChild.data
-            y = y.replace(' ', '')
-            y = simplificar(y)
-            contador = 0
-            if len(x) == 0:
-                x.append(y)
-            else:
-                for i in range(0,len(x)):
-                    z = re.findall(y,x[i],flags=re.IGNORECASE)
-                    if z == []:
-                        contador += 1
-                if contador == len(x):
+            n = palabra.getElementsByTagName('alias')
+            x = []
+            for i in n:
+                y = i.firstChild.data
+                y = y.replace(' ', '')
+                y = simplificar(y)
+                contador = 0
+                if len(x) == 0:
                     x.append(y)
-                    contador = 0
-        servicios.append(x)
+                else:
+                    for i in range(0,len(x)):
+                        z = re.findall(y,x[i],flags=re.IGNORECASE)
+                        if z == []:
+                            contador += 1
+                    if contador == len(x):
+                        x.append(y)
+                        contador = 0
+            servicios.append(x)
     return servicios
 
 def obtenerMensajes(archivo):
@@ -148,24 +151,6 @@ def obtenerMensajes(archivo):
                     contador = 0
     return x
 
-def obtenerMensajeInd(archivo):
-    x = []
-    palabras = archivo.getElementsByTagName('mensaje')
-    for palabra in palabras:
-        y = palabra.firstChild.data
-        y = simplificar(y)
-        contador = 0
-        if len(x) == 0:
-            x.append(y)
-        else:
-            for i in range(0,len(x)):
-                z = re.findall(y,x[i],flags=re.IGNORECASE)
-                if z == []:
-                    contador += 1
-            if contador == len(x):
-                x.append(y)
-                contador = 0
-    return x
 ###########################################################################
 ###########################################################################
 
@@ -196,6 +181,13 @@ def clasifMensajeSent(mensaje:str, positivos:list, negativos:list):
     elif total > 0:
         return 'positivo'
 
+def empresaMensaje(mensaje:str, empresa:str):
+    x = re.findall(empresa, mensaje,flags=re.IGNORECASE)
+    if len(x) != 0:
+        return True
+    else:
+        return False
+
 def numMenServ(mensajes:list, empresa: str):
     num = 0
     for i in mensajes:
@@ -213,7 +205,25 @@ def clasifMensajeServ(mensaje:str, empresa:str, servicio:str):
         return False
 
 def baseDeDatos(mensajes: list, sentimientosPositivos: list, sentimientosNegativos:list,empresas:list, servicios:list):
-    f = open('DataBase.xml','w')
+    f = open('DataBase.xml','r+')
+    if f.read() != '':
+        archivo = minidom.parse('DataBase.xml')
+        a = obtenerMensajes(archivo)
+        b = obtenerSentimientosPositivos(archivo)
+        c = obtenerSentimientosNegativos(archivo)
+        d = obtenerEmpresas(archivo)
+        e = obtenerServicios(archivo)
+        for i in a:
+            mensajes.append(i)
+        for i in b:
+            sentimientosPositivos.append(i)
+        for i in c:
+            sentimientosNegativos.append(i)
+        for i in d:
+            empresas.append(i)
+        for i in e:
+            servicios.append(i)
+
     archivo = ET.Element('solicitud_clasificacion')
     diccrionario = ET.SubElement(archivo,'diccionario')
     positif = ET.SubElement(diccrionario,'sentimientos_positivos')
@@ -233,20 +243,47 @@ def baseDeDatos(mensajes: list, sentimientosPositivos: list, sentimientosNegativ
     for i in empresas:
         nombre = ET.SubElement(empresa,'nombre')
         nombre.text = i
+        contador = 0
         for j in servicios[0]:
             servicio = ET.SubElement(empresa,'servicio')
             servicio.set('nombre', j)
-            for k in servicios[1]:
+            for i in servicios[contador+1]:
                 alias = ET.SubElement(servicio,'alias')
-                alias.text = k
+                alias.text = i
+            contador += 1
+    lista = ET.SubElement(archivo,'lista_mensajes')
+    for i in mensajes:
+        men = ET.SubElement(lista, 'mensaje')
+        men.text = i
 
+    f = open('DataBase.xml','w')
+    mydata1 = str(ET.tostring(archivo))
+    mydata2 = re.sub('b\'','',mydata1)
+    mydata = re.sub('\'','',mydata2)
+    f.write(str(mydata))
 
-
-    mydata = str(ET.tostring(archivo))
-    f.write(mydata)
+def response1(mensaje):
+    archivo = minidom.parse('DataBase.xml')
+    b = obtenerSentimientosPositivos(archivo)
+    c = obtenerSentimientosNegativos(archivo)
+    d = obtenerEmpresas(archivo)
+    e = obtenerServicios(archivo)
+    x = clasifMensajeSent(mensaje,b,c)
+    for i in range(0,len(d)):
+        for j in range(0,len(e[0])):
+            y = clasifMensajeServ(mensaje, d[i], e[0][j])
+            if y == True:
+                return x,d[i], e[0][j]
+        for j in range(1,len(e)):
+            for k in range(0,len(e[j])):
+                y = clasifMensajeServ(mensaje, d[i], e[j][k])
+                if y == True:
+                    return x,d[i], e[0][j-1]
 
 def reset():
-    os.remove('DataBase.xml')
+    f = open('DataBase.xml','w')
+    f.write('')
+
 
 archivo = minidom.parse('db.xml')
 a = obtenerMensajes(archivo)
@@ -254,6 +291,5 @@ b = obtenerSentimientosPositivos(archivo)
 c = obtenerSentimientosNegativos(archivo)
 d = obtenerEmpresas(archivo)
 e = obtenerServicios(archivo)
-baseDeDatos(a,b,c,d,e)
-db = minidom.parse('db.xml')
-print(obtenerSentimientosPositivos(db))
+for i in a:
+    print(response1(i))
