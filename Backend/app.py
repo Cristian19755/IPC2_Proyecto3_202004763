@@ -37,6 +37,7 @@ def consultarDatos():
     for mensaje in mensajes:
         x = response1(mensaje)
         y.append(x)
+        reporte(y)
     return jsonify(y)
 
 @app.route('/ProcesarMensaje', methods=['POST'])
@@ -44,6 +45,7 @@ def ProcesarMensaje():
     data = request.json
     mensaje = data['Mensaje']
     x = response1(mensaje)
+    reporte(x)
     return jsonify(x)
 
 @app.route('/ConsultarFecha', methods=['POST'])
@@ -61,6 +63,7 @@ def consultarFecha():
             if data['Fecha'] == FobtenerFecha(i) and empresaMensaje(i,data['Empresa']):
                 n = response1(i)
                 y.append(n)
+        reporte(y)
         return jsonify(y)
     else:
         y = obtenerEmpresas(archivo)
@@ -69,6 +72,7 @@ def consultarFecha():
                 if data['Fecha'] == FobtenerFecha(i) and empresaMensaje(i,j):
                     n = response1(i)
                     z.append(n)
+        reporte(z)
         return jsonify(z)
 
 @app.route('/ConsultarRangoFechas', methods=['POST'])
@@ -100,6 +104,7 @@ def consultarRangoFechas():
                     if fecha == FobtenerFecha(i) and empresaMensaje(i,j):
                         n = response1(i)
                         z.append(n)
+    reporte(z)
     return jsonify(z)
 
 

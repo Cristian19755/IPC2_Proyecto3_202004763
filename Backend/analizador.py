@@ -1,5 +1,6 @@
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
+import webbrowser
 import re
 
 def obtenerSentimientosPositivos(archivo):
@@ -285,4 +286,8 @@ def reset():
     f = open('DataBase.xml','w')
     f.write('')
 
+def reporte(data):
+    f = open('reporte.html','w')
+    f.write(str(data))
+    webbrowser.open('reporte.html')
 
